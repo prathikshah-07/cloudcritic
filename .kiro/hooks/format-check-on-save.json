@@ -1,0 +1,17 @@
+{
+  "version": "v1",
+  "hooks": [
+    {
+      "name": "Format Check on Save",
+      "trigger": "PostFileSave",
+      "action": {
+        "type": "command",
+        "command": "python -m py_compile backend/*.py"
+      },
+      "description": "Checks Python syntax whenever a backend file is saved",
+      "matcher": "\\.py$",
+      "timeout": 60,
+      "enabled": true
+    }
+  ]
+}
