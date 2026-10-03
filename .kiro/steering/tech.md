@@ -1,10 +1,18 @@
----
-inclusion: manual
----
-<!------------------------------------------------------------------------------------
-   This file is included only when invoked as a slash command (`/<filename>`)
-   in chat. Use it for prompts and instructions you want to run on demand —
-   the manual replacement for user-triggered hooks.
+# Tech Steering
 
-   Learn about inclusion modes: https://kiro.dev/docs/steering/#inclusion-modes
--------------------------------------------------------------------------------------> 
+## Stack
+- Python 3.11+
+- FastAPI for the backend
+- Pydantic v2 for validation
+- pytest + hypothesis for tests
+
+## Conventions
+- Type hints on every function
+- No global mutable state
+- No secrets in code — use .env
+- Every commit message starts with a prefix: spec, feat, fix, test, docs, chore
+
+## Rules
+- Never add dependencies without a reason
+- Never commit .env, __pycache__, or .venv
+- Keep files under 300 lines
