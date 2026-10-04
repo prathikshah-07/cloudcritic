@@ -1,6 +1,7 @@
-fastapi
-uvicorn
-requests
-pydantic
-pytest
-hypothesis
+fastapi==0.142.2
+uvicorn==0.54.0
+requests==2.34.2
+pydantic==2.13.5
+python-dotenv==1.1.1
+pytest==9.1.1
+hypothesis==6.168.3

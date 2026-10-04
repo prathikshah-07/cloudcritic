@@ -15,6 +15,9 @@ from __future__ import annotations
 import pathlib
 from typing import Any
 
+from dotenv import load_dotenv
+load_dotenv()  # loads .env into os.environ before any other module reads it
+
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse

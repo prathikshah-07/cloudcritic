@@ -1,8 +1,10 @@
 ﻿"""LLM-powered plain-language reviewer for CloudCritic findings.
 
-Calls the OpenAI Chat Completions API directly via ``requests`` (no SDK).
-Falls back to a deterministic summary when the API key is absent or the
-request fails, so the module is always safe to call in offline / CI contexts.
+Calls the Groq Chat Completions API directly via ``requests`` (no SDK).
+Groq exposes an OpenAI-compatible endpoint, so the request payload shape
+is identical. Falls back to a deterministic summary when the API key is
+absent or the request fails, so the module is always safe to call in
+offline / CI contexts.
 """
 
 from __future__ import annotations
@@ -23,12 +25,12 @@ logger = logging.getLogger(__name__)
 # Constants
 # ---------------------------------------------------------------------------
 
-_OPENAI_URL = "https://api.openai.com/v1/chat/completions"
-_MODEL = "gpt-4o-mini"
+_GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
+_MODEL = "openai/gpt-oss-120b"
 _TIMEOUT_SECONDS = 30
 
 _FALLBACK_TEMPLATE = (
-    "LLM review unavailable (OPENAI_API_KEY not set). "
+    "LLM review unavailable (GROQ_API_KEY not set). "
     "{count} finding(s) detected: {summary}."
 )
 
@@ -63,7 +65,7 @@ def _deterministic_fallback(findings: list[Finding]) -> str:
     """
     if not findings:
         return (
-            "LLM review unavailable (OPENAI_API_KEY not set). "
+            "LLM review unavailable (GROQ_API_KEY not set). "
             "No findings to report — architecture passed all evaluated rules."
         )
 
@@ -90,10 +92,10 @@ def _deterministic_fallback(findings: list[Finding]) -> str:
 
 
 def explain_findings(findings: list[Finding]) -> str:
-    """Return a plain-language LLM explanation of *findings*.
+    """Return a plain-language Groq LLM explanation of *findings*.
 
-    Calls the OpenAI Chat Completions API using the key in
-    ``os.environ["OPENAI_API_KEY"]``.  If the key is absent, or if the
+    Calls the Groq Chat Completions API using the key in
+    ``os.environ["GROQ_API_KEY"]``.  If the key is absent, or if the
     request fails for any reason, a deterministic fallback message is
     returned instead — no exception is raised to the caller.
 
@@ -111,10 +113,10 @@ def explain_findings(findings: list[Finding]) -> str:
         advice = explain_findings(report.findings)
         print(advice)
     """
-    api_key = os.environ.get("OPENAI_API_KEY", "").strip()
+    api_key = os.environ.get("GROQ_API_KEY", "").strip()
 
     if not api_key:
-        logger.debug("OPENAI_API_KEY not set; returning deterministic fallback.")
+        logger.debug("GROQ_API_KEY not set; returning deterministic fallback.")
         return _deterministic_fallback(findings)
 
     if not findings:
@@ -138,7 +140,7 @@ def explain_findings(findings: list[Finding]) -> str:
 
     try:
         response = requests.post(
-            _OPENAI_URL,
+            _GROQ_URL,
             headers=headers,
             data=json.dumps(payload),
             timeout=_TIMEOUT_SECONDS,
@@ -149,16 +151,16 @@ def explain_findings(findings: list[Finding]) -> str:
 
     except requests.exceptions.Timeout:
         logger.warning(
-            "OpenAI request timed out after %s seconds; returning fallback.",
+            "Groq request timed out after %s seconds; returning fallback.",
             _TIMEOUT_SECONDS,
         )
     except requests.exceptions.HTTPError as exc:
         logger.warning(
-            "OpenAI API returned HTTP %s: %s; returning fallback.",
+            "Groq API returned HTTP %s: %s; returning fallback.",
             exc.response.status_code,
             exc.response.text[:200],
         )
     except (requests.exceptions.RequestException, KeyError, ValueError) as exc:
-        logger.warning("OpenAI request failed (%s); returning fallback.", exc)
+        logger.warning("Groq request failed (%s); returning fallback.", exc)
 
     return _deterministic_fallback(findings)

@@ -180,12 +180,24 @@ button:disabled { opacity: .4; cursor: not-allowed; transform: none; }
   0%, 100% { opacity: 1; }
   50% { opacity: .6; }
 }
-#exampleBtn {
+#exampleSelect {
+  font-family: "JetBrains Mono", monospace;
+  font-size: .75rem;
+  letter-spacing: .05em;
+  text-transform: uppercase;
   background: transparent;
   color: var(--muted);
   border: 1px solid var(--border);
+  padding: .55rem .9rem;
+  border-radius: 8px;
+  cursor: pointer;
+  outline: none;
+  appearance: none;
+  -webkit-appearance: none;
+  transition: color .15s, border-color .15s;
 }
-#exampleBtn:not(:disabled):hover { color: var(--text); border-color: var(--muted); }
+#exampleSelect:hover { color: var(--text); border-color: var(--accent); }
+#exampleSelect option { background: #1a1a1a; color: var(--text); text-transform: none; letter-spacing: 0; }
 #explainBtn {
   background: transparent;
   color: var(--muted);
@@ -505,7 +517,14 @@ button:disabled { opacity: .4; cursor: not-allowed; transform: none; }
       ></textarea>
 
       <div class="btn-row">
-        <button id="exampleBtn" type="button">Try an example</button>
+        <select id="exampleSelect" aria-label="Load an example architecture">
+          <option value="" disabled selected>LOAD EXAMPLE ↓</option>
+          <option value="well-architected">Well-architected</option>
+          <option value="serverless">Serverless</option>
+          <option value="legacy-monolith">Legacy monolith</option>
+          <option value="startup-mvp">Startup MVP</option>
+          <option value="data-pipeline">Data pipeline</option>
+        </select>
         <button id="explainBtn" type="button" disabled>Explain →</button>
         <button id="scoreBtn" type="button">Score it →</button>
       </div>
@@ -566,7 +585,7 @@ button:disabled { opacity: .4; cursor: not-allowed; transform: none; }
 ═══════════════════════════════════════════════════════════════ */
 const archEl       = document.getElementById('arch');
 const scoreBtn     = document.getElementById('scoreBtn');
-const exampleBtn   = document.getElementById('exampleBtn');
+const exampleSelect = document.getElementById('exampleSelect');
 const explainBtn   = document.getElementById('explainBtn');
 const explainBtn2  = document.getElementById('explainBtn2');
 const errorEl      = document.getElementById('error');
@@ -713,17 +732,46 @@ function showResults() {
 }
 
 /* ════════════════════════════════════════════════════════════════
-   Example text
+   Example texts
 ═══════════════════════════════════════════════════════════════ */
-const EXAMPLE = `Our platform runs on AWS (us-east-1) with Multi-AZ RDS PostgreSQL and automated backups enabled. Traffic enters through CloudFront (CDN) backed by an Application Load Balancer. Services run on ECS Fargate (serverless) inside private VPC subnets.
+const EXAMPLES = {
+  'well-architected': `Our platform runs on AWS (us-east-1) with Multi-AZ RDS PostgreSQL and automated backups enabled. Traffic enters through CloudFront (CDN) backed by an Application Load Balancer. Services run on ECS Fargate inside private VPC subnets.
 
-IAM roles follow least-privilege. Secrets live in Secrets Manager encrypted via KMS. A WAF is attached to CloudFront. Encryption at rest is enforced via AES-256 across all storage.
+IAM roles follow least-privilege. Secrets live in Secrets Manager encrypted via KMS. A WAF is attached to CloudFront blocking OWASP Top 10. Encryption at rest is enforced via AES-256 across all storage.
 
-Auto Scaling policies handle traffic bursts. We use Graviton2 for compute, Reserved Instances for baseline, and Spot for batch jobs. S3 lifecycle policies tier objects to Glacier after 90 days.
+Auto Scaling policies handle traffic bursts. We use Graviton2 for compute, Reserved Instances for baseline capacity, and Spot for batch jobs. S3 lifecycle policies tier objects to Glacier after 90 days.
 
-CloudWatch dashboards, alarms, and centralised logging are in place. A CI/CD pipeline deploys on every merge. Rightsizing reviews run quarterly.`;
+CloudWatch dashboards, alarms, and centralised logging are in place. A CI/CD pipeline deploys on every merge. Rightsizing reviews run quarterly.`,
 
-exampleBtn.addEventListener('click', () => { archEl.value = EXAMPLE; archEl.focus(); });
+  'serverless': `Our application is fully serverless on AWS. API Gateway routes requests to Lambda functions written in Node.js. DynamoDB handles all persistence with on-demand capacity. Static assets are served from S3 via CloudFront.
+
+User authentication is handled by Cognito user pools with MFA enabled. All Lambda functions run inside a VPC with private subnets. CloudWatch Logs and X-Ray tracing are enabled across all functions.
+
+We use S3 event notifications to trigger async Lambda pipelines. There are no servers to patch or scale — capacity scales automatically with demand.`,
+
+  'legacy-monolith': `We have a single EC2 instance (t2.medium) running our Rails monolith behind an Elastic IP. The database is a single RDS MySQL instance with no read replicas. There are no automated backups configured.
+
+Deployments are done manually via SSH. There is no load balancer. We do not have monitoring or alerting set up. Security groups are open to port 22 from anywhere. No IAM roles are used — the app uses hardcoded credentials in the config file.`,
+
+  'startup-mvp': `Our MVP runs on a single EC2 t3.small instance. We use RDS PostgreSQL with a 7-day backup window. Static files are stored on S3 with public read access. We have basic IAM users set up for the team but no roles or policies beyond the defaults.
+
+CloudWatch basic monitoring is enabled on EC2. We do not have a load balancer yet but plan to add one. No CDN is in place. Deployments are via a simple bash script triggered from GitHub. No WAF or encryption at rest beyond the RDS default.`,
+
+  'data-pipeline': `Our data platform ingests events via Kinesis Data Streams with 24-hour retention. A Kinesis Firehose delivers raw data to S3, where Glue crawlers catalogue the schema automatically.
+
+AWS Glue ETL jobs transform and load data into Redshift every hour. Step Functions orchestrates the pipeline, with error handling and retry logic at each stage. CloudWatch monitors job duration and failure rates with SNS alarms on anomalies.
+
+Data in S3 is encrypted at rest via KMS. Redshift uses encrypted storage with VPC routing. IAM roles are scoped per Glue job and Lambda function following least-privilege.`,
+};
+
+exampleSelect.addEventListener('change', () => {
+  const text = EXAMPLES[exampleSelect.value];
+  if (text) {
+    archEl.value = text;
+    archEl.focus();
+  }
+  exampleSelect.value = ''; // reset to placeholder
+});
 
 /* ════════════════════════════════════════════════════════════════
    Score
