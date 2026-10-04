@@ -3,220 +3,814 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>CloudCritic</title>
+<title>CloudCritic — AWS Well-Architected Scorer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
 <style>
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  body { background: #0d1117; color: #e6edf3; font-family: system-ui, sans-serif; padding: 2rem; }
-  h1 { font-size: 1.8rem; margin-bottom: .25rem; color: #58a6ff; }
-  p.sub { color: #8b949e; margin-bottom: 1.5rem; font-size: .9rem; }
-  textarea {
-    width: 100%; height: 160px; background: #161b22; color: #e6edf3;
-    border: 1px solid #30363d; border-radius: 6px; padding: .75rem;
-    font-size: .9rem; resize: vertical; outline: none;
-  }
-  textarea:focus { border-color: #58a6ff; }
-  .btn-row { display: flex; gap: .75rem; margin: 1rem 0; }
-  button {
-    padding: .55rem 1.25rem; border-radius: 6px; border: none;
-    font-size: .9rem; cursor: pointer; font-weight: 600;
-  }
-  #scoreBtn   { background: #238636; color: #fff; }
-  #explainBtn { background: #1f6feb; color: #fff; }
-  button:disabled { opacity: .5; cursor: not-allowed; }
-  #error { color: #f85149; margin: .5rem 0; font-size: .85rem; min-height: 1.2rem; }
-  #aggregate { display: none; margin: 1.5rem 0 1rem; }
-  .agg-label { font-size: .85rem; color: #8b949e; text-transform: uppercase; letter-spacing: .05em; }
-  .agg-score { font-size: 4rem; font-weight: 700; line-height: 1; color: #58a6ff; }
-  #pillars {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-    gap: .75rem; margin-bottom: 1.5rem;
-  }
-  .card { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 1rem; }
-  .card-name  { font-size: .78rem; color: #8b949e; margin-bottom: .4rem; text-transform: uppercase; letter-spacing: .04em; }
-  .card-score { font-size: 2rem; font-weight: 700; color: #e6edf3; }
-  .card-detail{ font-size: .78rem; color: #8b949e; margin-top: .25rem; }
-  #findingsSection h2,
-  #explainSection h2 { font-size: 1.1rem; margin-bottom: .75rem; color: #e6edf3; }
-  .finding {
-    background: #161b22; border: 1px solid #30363d; border-radius: 6px;
-    padding: .75rem 1rem; margin-bottom: .5rem;
-    display: flex; align-items: flex-start; gap: .75rem;
-  }
-  .badge {
-    font-size: .7rem; font-weight: 700; padding: .2rem .5rem;
-    border-radius: 4px; white-space: nowrap; flex-shrink: 0; margin-top: .15rem;
-  }
-  .CRITICAL { background: #da3633; color: #fff; }
-  .HIGH     { background: #d4782a; color: #fff; }
-  .MEDIUM   { background: #9e6a03; color: #fff; }
-  .LOW      { background: #3d444d; color: #e6edf3; }
-  .finding-body { flex: 1; }
-  .finding-meta { font-size: .75rem; color: #8b949e; margin-bottom: .2rem; }
-  .finding-desc { font-size: .85rem; color: #e6edf3; }
-  #explainSection { margin-top: 1.5rem; display: none; }
-  #explainBox {
-    background: #161b22; border: 1px solid #30363d; border-radius: 6px;
-    padding: 1rem; font-size: .9rem; line-height: 1.6; color: #c9d1d9; white-space: pre-wrap;
-  }
+/* ── Reset ─────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* ── Tokens ────────────────────────────────────────────────────── */
+:root {
+  --bg:       #0a0a0a;
+  --surface:  #111111;
+  --border:   #1f1f1f;
+  --text:     #f5f5f5;
+  --muted:    #7a7a7a;
+  --accent:   #7c5cff;
+  --green:    #3fb950;
+  --amber:    #d29922;
+  --red:      #f85149;
+  --ease:     cubic-bezier(.4, 0, .2, 1);
+  --font-sans:  "Inter", system-ui, sans-serif;
+  --font-serif: "Instrument Serif", Georgia, serif;
+  --font-mono:  "JetBrains Mono", "Fira Code", monospace;
+}
+
+html { scroll-behavior: smooth; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 1.6;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+/* ── Fixed top nav ─────────────────────────────────────────────── */
+nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 200;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 2.5rem;
+  height: 48px;
+  background: rgba(10,10,10,.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--border);
+}
+.nav-logo {
+  font-family: var(--font-mono);
+  font-size: .72rem;
+  font-weight: 500;
+  letter-spacing: .15em;
+  color: var(--text);
+  text-decoration: none;
+}
+.nav-version {
+  font-family: var(--font-mono);
+  font-size: .68rem;
+  color: var(--muted);
+  letter-spacing: .08em;
+}
+
+/* ── Main wrapper ──────────────────────────────────────────────── */
+main {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 2rem;
+}
+
+/* ── Hero ──────────────────────────────────────────────────────── */
+#hero {
+  min-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 8rem 0 5rem;
+}
+.hero-eyebrow {
+  font-family: var(--font-mono);
+  font-size: .68rem;
+  color: var(--muted);
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  margin-bottom: 2.25rem;
+  opacity: 0;
+  transform: translateY(10px);
+  animation: fadeUp 400ms var(--ease) 100ms forwards;
+}
+.hero-headline {
+  font-family: var(--font-serif);
+  font-size: clamp(3rem, 8vw, 7rem);
+  line-height: 0.95;
+  letter-spacing: -.02em;
+  color: var(--text);
+  margin-bottom: 2rem;
+  max-width: 820px;
+  opacity: 0;
+  transform: translateY(14px);
+  animation: fadeUp 400ms var(--ease) 200ms forwards;
+}
+.hero-headline em {
+  font-style: italic;
+  color: var(--accent);
+}
+.hero-sub {
+  font-size: 1.15rem;
+  color: var(--muted);
+  max-width: 600px;
+  line-height: 1.65;
+  margin-bottom: 3.5rem;
+  opacity: 0;
+  transform: translateY(10px);
+  animation: fadeUp 400ms var(--ease) 300ms forwards;
+}
+@keyframes fadeUp {
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Input area ────────────────────────────────────────────────── */
+#inputWrap {
+  max-width: 780px;
+  opacity: 0;
+  transform: translateY(10px);
+  animation: fadeUp 400ms var(--ease) 400ms forwards;
+}
+textarea {
+  width: 100%;
+  min-height: 140px;
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 1.1rem 1.2rem;
+  font-family: var(--font-sans);
+  font-size: .95rem;
+  line-height: 1.65;
+  resize: vertical;
+  outline: none;
+  transition: border-color .2s var(--ease), box-shadow .2s var(--ease);
+}
+textarea::placeholder { color: var(--muted); }
+textarea:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(124,92,255,.12);
+}
+.btn-row {
+  display: flex;
+  gap: .65rem;
+  justify-content: flex-end;
+  margin-top: .9rem;
+  flex-wrap: wrap;
+}
+button {
+  font-family: var(--font-sans);
+  font-size: .88rem;
+  font-weight: 600;
+  border: none;
+  border-radius: 8px;
+  padding: .6rem 1.3rem;
+  cursor: pointer;
+  transition: opacity .15s var(--ease), transform .1s var(--ease), box-shadow .15s var(--ease);
+}
+button:active { transform: scale(.97); }
+button:disabled { opacity: .4; cursor: not-allowed; transform: none; }
+#scoreBtn {
+  background: var(--accent);
+  color: #000;
+}
+#scoreBtn:not(:disabled):hover { box-shadow: 0 4px 20px rgba(124,92,255,.4); }
+#scoreBtn.pulsing { animation: btnPulse 1s var(--ease) infinite; }
+@keyframes btnPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: .6; }
+}
+#exampleBtn {
+  background: transparent;
+  color: var(--muted);
+  border: 1px solid var(--border);
+}
+#exampleBtn:not(:disabled):hover { color: var(--text); border-color: var(--muted); }
+#explainBtn {
+  background: transparent;
+  color: var(--muted);
+  border: 1px solid var(--border);
+}
+#explainBtn:not(:disabled):hover { color: var(--text); border-color: var(--accent); }
+#error {
+  font-family: var(--font-mono);
+  font-size: .78rem;
+  color: var(--red);
+  min-height: 1.2rem;
+  margin-top: .6rem;
+  text-align: right;
+}
+
+/* ── Section divider ───────────────────────────────────────────── */
+.section-rule {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 5rem 0;
+}
+
+/* ── Results (hidden until scored) ────────────────────────────── */
+#results {
+  display: none;
+  opacity: 0;
+  transform: translateY(16px);
+  transition: opacity .5s var(--ease), transform .5s var(--ease);
+  padding-bottom: 8rem;
+}
+#results.visible {
+  display: block;
+}
+#results.animated {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ── Aggregate score ───────────────────────────────────────────── */
+#aggregateWrap {
+  margin-bottom: 4rem;
+}
+.agg-number {
+  font-family: var(--font-mono);
+  font-size: clamp(4rem, 12vw, 9rem);
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: -.04em;
+  display: inline-block;
+}
+.agg-grade {
+  font-family: var(--font-mono);
+  font-size: clamp(2rem, 5vw, 4rem);
+  font-weight: 500;
+  letter-spacing: -.02em;
+  display: inline-block;
+  margin-left: .6rem;
+  vertical-align: bottom;
+  margin-bottom: .2rem;
+}
+.agg-caption {
+  font-family: var(--font-mono);
+  font-size: .7rem;
+  color: var(--muted);
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  margin-top: .75rem;
+  margin-bottom: .5rem;
+}
+.agg-desc {
+  font-size: .95rem;
+  color: var(--muted);
+}
+
+/* ── Section label ─────────────────────────────────────────────── */
+.section-label {
+  font-family: var(--font-mono);
+  font-size: .68rem;
+  color: var(--muted);
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  margin-bottom: 1.5rem;
+}
+
+/* ── Pillar grid ───────────────────────────────────────────────── */
+#pillarsGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1px;
+  background: var(--border);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+  margin-bottom: 4rem;
+}
+.pillar-card {
+  background: var(--surface);
+  padding: 1.4rem 1.5rem;
+  transition: background .2s var(--ease);
+}
+.pillar-card:hover { background: #161616; }
+.pillar-name {
+  font-family: var(--font-sans);
+  font-size: .72rem;
+  font-weight: 500;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: .6rem;
+}
+.pillar-score {
+  font-family: var(--font-mono);
+  font-size: 2rem;
+  font-weight: 500;
+  letter-spacing: -.03em;
+  line-height: 1;
+  margin-bottom: .65rem;
+}
+.pillar-bar-track {
+  height: 3px;
+  background: var(--border);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-bottom: .5rem;
+}
+.pillar-bar-fill {
+  height: 100%;
+  border-radius: 2px;
+  width: 0;
+  transition: width .7s var(--ease);
+}
+.pillar-passing {
+  font-family: var(--font-mono);
+  font-size: .68rem;
+  color: var(--muted);
+  letter-spacing: .04em;
+}
+
+/* ── Severity summary ──────────────────────────────────────────── */
+#sevRow {
+  display: flex;
+  gap: .5rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.25rem;
+  align-items: center;
+}
+.sev-pill {
+  font-family: var(--font-mono);
+  font-size: .68rem;
+  font-weight: 500;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  padding: .25rem .65rem;
+  border-radius: 6px;
+  border: 1px solid;
+}
+.sev-pill.CRITICAL { color: var(--red);   border-color: rgba(248,81,73,.35);  background: rgba(248,81,73,.08); }
+.sev-pill.HIGH     { color: #ffa657;      border-color: rgba(255,166,87,.3);  background: rgba(255,166,87,.07); }
+.sev-pill.MEDIUM   { color: var(--amber); border-color: rgba(210,153,34,.3);  background: rgba(210,153,34,.07); }
+.sev-pill.LOW      { color: var(--muted); border-color: var(--border);        background: transparent; }
+
+/* ── Findings ──────────────────────────────────────────────────── */
+#findingsList {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+  margin-bottom: 3rem;
+}
+.finding-row {
+  display: grid;
+  grid-template-columns: 100px 1fr auto;
+  align-items: start;
+  gap: 1.25rem;
+  padding: 1rem 1.25rem;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  opacity: 0;
+  animation: fadeIn .3s var(--ease) forwards;
+  transition: background .15s var(--ease);
+}
+.finding-row:last-child { border-bottom: none; }
+.finding-row:hover { background: #161616; }
+@keyframes fadeIn { to { opacity: 1; } }
+.finding-badge {
+  font-family: var(--font-mono);
+  font-size: .65rem;
+  font-weight: 500;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  padding: .22rem .55rem;
+  border-radius: 5px;
+  border: 1px solid;
+  white-space: nowrap;
+  display: inline-block;
+  margin-top: .1rem;
+}
+.finding-badge.CRITICAL {
+  color: var(--red); border-color: rgba(248,81,73,.4); background: rgba(248,81,73,.1);
+  animation: criticalPulse 2s var(--ease) infinite;
+}
+@keyframes criticalPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(248,81,73,.4); }
+  50%       { box-shadow: 0 0 0 4px rgba(248,81,73,0); }
+}
+.finding-badge.HIGH   { color: #ffa657;      border-color: rgba(255,166,87,.35); background: rgba(255,166,87,.08); }
+.finding-badge.MEDIUM { color: var(--amber); border-color: rgba(210,153,34,.35); background: rgba(210,153,34,.08); }
+.finding-badge.LOW    { color: var(--muted); border-color: var(--border);        background: transparent; }
+.finding-center {}
+.finding-rule {
+  font-family: var(--font-mono);
+  font-size: .7rem;
+  color: var(--muted);
+  margin-bottom: .3rem;
+  letter-spacing: .03em;
+}
+.finding-desc {
+  font-size: .88rem;
+  color: var(--text);
+  line-height: 1.5;
+}
+.finding-pillar {
+  font-family: var(--font-mono);
+  font-size: .65rem;
+  color: var(--muted);
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  margin-top: .1rem;
+  text-align: right;
+}
+
+/* ── No findings state ─────────────────────────────────────────── */
+.no-findings {
+  font-family: var(--font-mono);
+  font-size: .82rem;
+  color: var(--green);
+  padding: 1.25rem;
+  background: var(--surface);
+  border-radius: 12px;
+  border: 1px solid rgba(63,185,80,.2);
+  margin-bottom: 3rem;
+  letter-spacing: .04em;
+}
+
+/* ── Explain block ─────────────────────────────────────────────── */
+#explainWrap {
+  display: none;
+  margin-bottom: 4rem;
+}
+#explainBlock {
+  border-left: 2px solid var(--accent);
+  padding-left: 1.5rem;
+  font-family: var(--font-sans);
+  font-style: italic;
+  font-size: 1rem;
+  line-height: 1.8;
+  color: #c0c0c0;
+  white-space: pre-wrap;
+}
+#explainRow {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 1.25rem;
+}
+
+/* ── Responsive ────────────────────────────────────────────────── */
+@media (max-width: 860px) {
+  #pillarsGrid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 700px) {
+  nav { padding: 0 1.25rem; }
+  main { padding: 0 1.25rem; }
+  #hero { padding: 7rem 0 4rem; }
+  #pillarsGrid { grid-template-columns: 1fr; }
+  .finding-row { grid-template-columns: 80px 1fr; }
+  .finding-pillar { display: none; }
+  .btn-row { justify-content: stretch; }
+  .btn-row button { flex: 1; justify-content: center; }
+}
+@media (max-width: 480px) {
+  #pillarsGrid { grid-template-columns: 1fr; }
+}
 </style>
 </head>
 <body>
 
-<h1>☁️ CloudCritic</h1>
-<p class="sub">Paste an AWS architecture description and score it against the Well-Architected Framework.</p>
+<!-- ── Nav ──────────────────────────────────────────────────────── -->
+<nav>
+  <span class="nav-logo">CLOUDCRITIC</span>
+  <span class="nav-version">V0.1.0</span>
+</nav>
 
-<textarea id="arch" placeholder="e.g. We run a multi-az RDS instance with automated backups. Traffic flows through CloudFront and an ALB load balancer. IAM roles control access. Encryption at rest via KMS..."></textarea>
+<!-- ── Main ─────────────────────────────────────────────────────── -->
+<main>
 
-<div class="btn-row">
-  <button id="scoreBtn">Score my architecture</button>
-  <button id="explainBtn" disabled>Explain in plain English</button>
-</div>
-<div id="error"></div>
+  <!-- Hero -->
+  <section id="hero">
+    <p class="hero-eyebrow">DETERMINISTIC · 6 PILLARS · 26 RULES · NO LLM IN THE CORE</p>
 
-<div id="aggregate">
-  <div class="agg-label">Aggregate score</div>
-  <div class="agg-score" id="aggNum">—</div>
-</div>
+    <h1 class="hero-headline">
+      Ship architectures <em>peacefully.</em>
+    </h1>
 
-<div id="pillars"></div>
+    <p class="hero-sub">
+      Paste an AWS design. Get scored against the Well-Architected Framework in seconds.
+    </p>
 
-<div id="findingsSection" style="display:none">
-  <h2>Findings</h2>
-  <div id="findingsList"></div>
-</div>
+    <!-- Input -->
+    <div id="inputWrap">
+      <textarea
+        id="arch"
+        placeholder="Describe your AWS architecture — e.g. multi-AZ RDS, CloudFront, IAM roles, KMS encryption, Auto Scaling…"
+        spellcheck="false"
+      ></textarea>
 
-<div id="explainSection">
-  <h2>Plain-English Explanation</h2>
-  <div id="explainBox"></div>
-</div>
+      <div class="btn-row">
+        <button id="exampleBtn" type="button">Try an example</button>
+        <button id="explainBtn" type="button" disabled>Explain →</button>
+        <button id="scoreBtn" type="button">Score it →</button>
+      </div>
+      <div id="error" role="alert" aria-live="polite"></div>
+    </div>
+  </section>
+
+  <!-- Results -->
+  <div id="results" aria-label="Scoring results">
+
+    <hr class="section-rule" />
+
+    <!-- Aggregate -->
+    <div id="aggregateWrap">
+      <div>
+        <span class="agg-number" id="aggNumber">0</span><span class="agg-grade" id="aggGrade"></span>
+      </div>
+      <p class="agg-caption" id="aggCaption">AGGREGATE SCORE · GRADE —</p>
+      <p class="agg-desc" id="aggDesc"></p>
+    </div>
+
+    <hr class="section-rule" style="margin-top:3rem;" />
+
+    <!-- Pillars -->
+    <p class="section-label">Pillar breakdown</p>
+    <div id="pillarsGrid"></div>
+
+    <!-- Findings header -->
+    <p class="section-label">Findings</p>
+    <div id="sevRow"></div>
+
+    <!-- Explain button row -->
+    <div id="explainRow">
+      <button id="explainBtn2" type="button" style="
+        font-family:var(--font-sans);font-size:.85rem;font-weight:600;
+        background:transparent;color:var(--muted);border:1px solid var(--border);
+        border-radius:8px;padding:.55rem 1.2rem;cursor:pointer;
+        transition:color .15s,border-color .15s;
+      ">Explain in plain English →</button>
+    </div>
+
+    <!-- Findings list -->
+    <div id="findingsList"></div>
+
+    <!-- Explain block -->
+    <div id="explainWrap">
+      <p class="section-label">Plain-English Explanation</p>
+      <div id="explainBlock"></div>
+    </div>
+
+  </div>
+
+</main>
 
 <script>
-  const archEl     = document.getElementById('arch');
-  const scoreBtn   = document.getElementById('scoreBtn');
-  const explainBtn = document.getElementById('explainBtn');
-  const errorEl    = document.getElementById('error');
-  const aggSection = document.getElementById('aggregate');
-  const aggNum     = document.getElementById('aggNum');
-  const pillarsEl  = document.getElementById('pillars');
-  const findSec    = document.getElementById('findingsSection');
-  const findList   = document.getElementById('findingsList');
-  const expSec     = document.getElementById('explainSection');
-  const expBox     = document.getElementById('explainBox');
+/* ════════════════════════════════════════════════════════════════
+   Refs
+═══════════════════════════════════════════════════════════════ */
+const archEl       = document.getElementById('arch');
+const scoreBtn     = document.getElementById('scoreBtn');
+const exampleBtn   = document.getElementById('exampleBtn');
+const explainBtn   = document.getElementById('explainBtn');
+const explainBtn2  = document.getElementById('explainBtn2');
+const errorEl      = document.getElementById('error');
+const results      = document.getElementById('results');
+const aggNumber    = document.getElementById('aggNumber');
+const aggGrade     = document.getElementById('aggGrade');
+const aggCaption   = document.getElementById('aggCaption');
+const aggDesc      = document.getElementById('aggDesc');
+const pillarsGrid  = document.getElementById('pillarsGrid');
+const sevRow       = document.getElementById('sevRow');
+const findingsList = document.getElementById('findingsList');
+const explainWrap  = document.getElementById('explainWrap');
+const explainBlock = document.getElementById('explainBlock');
 
-  function setError(msg) { errorEl.textContent = msg; }
-  function clearError()  { errorEl.textContent = ''; }
+/* ════════════════════════════════════════════════════════════════
+   Helpers
+═══════════════════════════════════════════════════════════════ */
+function scoreColor(s) {
+  return s >= 80 ? 'var(--green)' : s >= 60 ? 'var(--amber)' : 'var(--red)';
+}
 
-  function scoreColor(s) {
-    if (s >= 80) return '#3fb950';
-    if (s >= 60) return '#d29922';
-    return '#f85149';
+function letterGrade(s) {
+  if (s >= 90) return { grade: 'A', desc: 'Excellent — well-architected across all pillars.' };
+  if (s >= 80) return { grade: 'B', desc: 'Good — minor gaps worth addressing.' };
+  if (s >= 70) return { grade: 'C', desc: 'Fair — several areas need attention.' };
+  if (s >= 60) return { grade: 'D', desc: 'Poor — significant risk areas present.' };
+  return            { grade: 'F', desc: 'Critical — major architectural issues detected.' };
+}
+
+function setError(msg) { errorEl.textContent = msg; }
+function clearError()  { errorEl.textContent = ''; }
+
+function normalizePillars(data) {
+  if (data.pillars) return data.pillars;
+  return Object.fromEntries(
+    Object.entries(data.pillar_scores).map(([k, v]) => [
+      k, { score: v.score, passing: v.passing_rules, total: v.total_rules }
+    ])
+  );
+}
+
+/* ════════════════════════════════════════════════════════════════
+   Count-up animation
+═══════════════════════════════════════════════════════════════ */
+function countUp(el, target, duration, color) {
+  const start = performance.now();
+  function step(now) {
+    const t = Math.min((now - start) / duration, 1);
+    const eased = 1 - Math.pow(1 - t, 3); // ease-out-cubic
+    el.textContent = Math.round(eased * target);
+    if (t < 1) requestAnimationFrame(step);
+    else el.textContent = target;
   }
+  el.style.color = color;
+  requestAnimationFrame(step);
+}
 
-  function normalizePillars(data) {
-    // Handle both score_architecture shape {pillars:{name:{score,passing,total}}}
-    // and EvaluationReport shape {pillar_scores:{name:{score,passing_rules,total_rules}}}
-    if (data.pillars) return data.pillars;
-    return Object.fromEntries(
-      Object.entries(data.pillar_scores).map(([k, v]) => [
-        k, { score: v.score, passing: v.passing_rules, total: v.total_rules }
-      ])
-    );
-  }
+/* ════════════════════════════════════════════════════════════════
+   Render aggregate
+═══════════════════════════════════════════════════════════════ */
+function renderAggregate(score) {
+  const color = scoreColor(score);
+  const { grade, desc } = letterGrade(score);
 
-  function renderPillars(pillars) {
-    pillarsEl.innerHTML = '';
-    for (const [name, d] of Object.entries(pillars)) {
-      const card = document.createElement('div');
-      card.className = 'card';
-      card.innerHTML =
-        `<div class="card-name">${name}</div>` +
-        `<div class="card-score" style="color:${scoreColor(d.score)}">${d.score}</div>` +
-        `<div class="card-detail">${d.passing} / ${d.total} rules passed</div>`;
-      pillarsEl.appendChild(card);
-    }
-  }
+  countUp(aggNumber, score, 800, color);
+  aggGrade.textContent = grade;
+  aggGrade.style.color = color;
+  aggCaption.textContent = `AGGREGATE SCORE · GRADE ${grade}`;
+  aggDesc.textContent = desc;
+}
 
-  function renderFindings(findings) {
-    findList.innerHTML = '';
-    if (!findings.length) {
-      findList.innerHTML = '<p style="color:#3fb950;font-size:.9rem">✓ No findings — all rules passed.</p>';
-      return;
-    }
-    for (const f of findings) {
-      const el = document.createElement('div');
-      el.className = 'finding';
-      el.innerHTML =
-        `<span class="badge ${f.severity}">${f.severity}</span>` +
-        `<div class="finding-body">` +
-          `<div class="finding-meta">${f.pillar} · ${f.rule_id}</div>` +
-          `<div class="finding-desc">${f.description}</div>` +
-        `</div>`;
-      findList.appendChild(el);
-    }
-  }
-
-  scoreBtn.addEventListener('click', async () => {
-    const text = archEl.value.trim();
-    if (!text) { setError('Please paste an architecture description first.'); return; }
-    clearError();
-    scoreBtn.disabled = true;
-    scoreBtn.textContent = 'Scoring…';
-    expSec.style.display = 'none';
-    explainBtn.disabled = true;
-
-    try {
-      const res = await fetch('/api/score', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ architecture: text }),
-      });
-      if (!res.ok) { const e = await res.json(); throw new Error(e.detail || res.statusText); }
-      const data = await res.json();
-
-      const agg = data.aggregate_score ?? data.aggregate ?? 0;
-      aggNum.textContent = agg;
-      aggNum.style.color = scoreColor(agg);
-      aggSection.style.display = 'block';
-
-      renderPillars(normalizePillars(data));
-
-      findSec.style.display = 'block';
-      renderFindings(data.findings ?? []);
-
-      explainBtn.disabled = false;
-    } catch (err) {
-      setError('Error: ' + err.message);
-    } finally {
-      scoreBtn.disabled = false;
-      scoreBtn.textContent = 'Score my architecture';
-    }
+/* ════════════════════════════════════════════════════════════════
+   Render pillars
+═══════════════════════════════════════════════════════════════ */
+function renderPillars(pillars) {
+  pillarsGrid.innerHTML = '';
+  Object.entries(pillars).forEach(([name, d], i) => {
+    const color = scoreColor(d.score);
+    const card = document.createElement('div');
+    card.className = 'pillar-card';
+    card.innerHTML =
+      `<div class="pillar-name">${name}</div>` +
+      `<div class="pillar-score" style="color:${color}">${d.score}</div>` +
+      `<div class="pillar-bar-track">` +
+        `<div class="pillar-bar-fill" style="background:${color};transition-delay:${i * 80}ms" data-pct="${d.score}"></div>` +
+      `</div>` +
+      `<div class="pillar-passing">${d.passing} / ${d.total} RULES PASSED</div>`;
+    pillarsGrid.appendChild(card);
   });
+  // Trigger bar animation next paint
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    pillarsGrid.querySelectorAll('.pillar-bar-fill').forEach(el => {
+      el.style.width = el.dataset.pct + '%';
+    });
+  }));
+}
 
-  explainBtn.addEventListener('click', async () => {
-    const text = archEl.value.trim();
-    if (!text) return;
-    clearError();
-    explainBtn.disabled = true;
-    explainBtn.textContent = 'Explaining…';
+/* ════════════════════════════════════════════════════════════════
+   Severity summary
+═══════════════════════════════════════════════════════════════ */
+function renderSevRow(findings) {
+  const counts = { CRITICAL: 0, HIGH: 0, MEDIUM: 0, LOW: 0 };
+  findings.forEach(f => { if (f.severity in counts) counts[f.severity]++; });
+  sevRow.innerHTML = Object.entries(counts)
+    .filter(([, n]) => n > 0)
+    .map(([sev, n]) => `<span class="sev-pill ${sev}">${n} ${sev}</span>`)
+    .join('') || '<span style="font-family:var(--font-mono);font-size:.72rem;color:var(--green);letter-spacing:.06em">ALL RULES PASSED</span>';
+}
 
-    try {
-      const res = await fetch('/api/explain', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ architecture: text }),
-      });
-      if (!res.ok) { const e = await res.json(); throw new Error(e.detail || res.statusText); }
-      const data = await res.json();
-      expBox.textContent = data.explanation;
-      expSec.style.display = 'block';
-    } catch (err) {
-      setError('Error: ' + err.message);
-    } finally {
-      explainBtn.disabled = false;
-      explainBtn.textContent = 'Explain in plain English';
-    }
+/* ════════════════════════════════════════════════════════════════
+   Render findings
+═══════════════════════════════════════════════════════════════ */
+function renderFindings(findings) {
+  findingsList.innerHTML = '';
+  if (!findings.length) {
+    const el = document.createElement('div');
+    el.className = 'no-findings';
+    el.textContent = '✓  NO FINDINGS — ALL RULES PASSED';
+    findingsList.appendChild(el);
+    return;
+  }
+  findings.forEach((f, i) => {
+    const row = document.createElement('div');
+    row.className = 'finding-row';
+    row.style.animationDelay = `${i * 40}ms`;
+    row.innerHTML =
+      `<div><span class="finding-badge ${f.severity}">${f.severity}</span></div>` +
+      `<div class="finding-center">` +
+        `<div class="finding-rule">${f.rule_id}</div>` +
+        `<div class="finding-desc">${f.description}</div>` +
+      `</div>` +
+      `<div class="finding-pillar">${f.pillar}</div>`;
+    findingsList.appendChild(row);
   });
+}
+
+/* ════════════════════════════════════════════════════════════════
+   Show results
+═══════════════════════════════════════════════════════════════ */
+function showResults() {
+  results.style.display = 'block';
+  requestAnimationFrame(() => requestAnimationFrame(() => results.classList.add('animated')));
+  setTimeout(() => results.scrollIntoView({ behavior: 'smooth', block: 'start' }), 60);
+}
+
+/* ════════════════════════════════════════════════════════════════
+   Example text
+═══════════════════════════════════════════════════════════════ */
+const EXAMPLE = `Our platform runs on AWS (us-east-1) with Multi-AZ RDS PostgreSQL and automated backups enabled. Traffic enters through CloudFront (CDN) backed by an Application Load Balancer. Services run on ECS Fargate (serverless) inside private VPC subnets.
+
+IAM roles follow least-privilege. Secrets live in Secrets Manager encrypted via KMS. A WAF is attached to CloudFront. Encryption at rest is enforced via AES-256 across all storage.
+
+Auto Scaling policies handle traffic bursts. We use Graviton2 for compute, Reserved Instances for baseline, and Spot for batch jobs. S3 lifecycle policies tier objects to Glacier after 90 days.
+
+CloudWatch dashboards, alarms, and centralised logging are in place. A CI/CD pipeline deploys on every merge. Rightsizing reviews run quarterly.`;
+
+exampleBtn.addEventListener('click', () => { archEl.value = EXAMPLE; archEl.focus(); });
+
+/* ════════════════════════════════════════════════════════════════
+   Score
+═══════════════════════════════════════════════════════════════ */
+scoreBtn.addEventListener('click', async () => {
+  const text = archEl.value.trim();
+  if (!text) { setError('Paste an architecture description first.'); return; }
+  clearError();
+
+  scoreBtn.textContent = 'Scoring…';
+  scoreBtn.disabled = true;
+  scoreBtn.classList.add('pulsing');
+  explainBtn.disabled = true;
+  explainWrap.style.display = 'none';
+
+  try {
+    const res = await fetch('/api/score', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ architecture: text }),
+    });
+    if (!res.ok) { const e = await res.json(); throw new Error(e.detail || res.statusText); }
+    const data = await res.json();
+
+    const agg = data.aggregate_score ?? data.aggregate ?? 0;
+    renderAggregate(agg);
+    renderPillars(normalizePillars(data));
+    renderSevRow(data.findings ?? []);
+    renderFindings(data.findings ?? []);
+
+    showResults();
+    explainBtn.disabled = false;
+  } catch (err) {
+    setError(err.message);
+  } finally {
+    scoreBtn.textContent = 'Score it →';
+    scoreBtn.disabled = false;
+    scoreBtn.classList.remove('pulsing');
+  }
+});
+
+/* ════════════════════════════════════════════════════════════════
+   Explain (both buttons call the same handler)
+═══════════════════════════════════════════════════════════════ */
+async function doExplain() {
+  const text = archEl.value.trim();
+  if (!text) return;
+  clearError();
+
+  explainBtn.disabled = true;
+  explainBtn2.textContent = 'Explaining…';
+  explainBtn2.disabled = true;
+
+  try {
+    const res = await fetch('/api/explain', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ architecture: text }),
+    });
+    if (!res.ok) { const e = await res.json(); throw new Error(e.detail || res.statusText); }
+    const data = await res.json();
+    explainBlock.textContent = data.explanation ?? data.advice ?? JSON.stringify(data, null, 2);
+    explainWrap.style.display = 'block';
+    explainWrap.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  } catch (err) {
+    setError(err.message);
+  } finally {
+    explainBtn.disabled = false;
+    explainBtn2.textContent = 'Explain in plain English →';
+    explainBtn2.disabled = false;
+  }
+}
+
+explainBtn.addEventListener('click', doExplain);
+explainBtn2.addEventListener('click', doExplain);
+
+/* ════════════════════════════════════════════════════════════════
+   Explain button 2 hover styles (inline-defined element)
+═══════════════════════════════════════════════════════════════ */
+explainBtn2.addEventListener('mouseenter', () => {
+  explainBtn2.style.color = 'var(--text)';
+  explainBtn2.style.borderColor = 'var(--accent)';
+});
+explainBtn2.addEventListener('mouseleave', () => {
+  explainBtn2.style.color = 'var(--muted)';
+  explainBtn2.style.borderColor = 'var(--border)';
+});
 </script>
 </body>
 </html>

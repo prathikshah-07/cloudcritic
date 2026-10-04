@@ -1,0 +1,275 @@
+{
+  "version": "1.0.0",
+  "rules": [
+    {
+      "rule_id": "SEC-001",
+      "pillar": "Security",
+      "severity": "HIGH",
+      "keyword": "encryption",
+      "synonyms": ["encrypted", "encrypt", "tls", "ssl", "at rest", "in transit"],
+      "description": "Data at rest or in transit is not encrypted.",
+      "remediation": "Enable AWS KMS encryption for data at rest and enforce TLS 1.2+ in transit via ALB/CloudFront listeners.",
+      "doc_url": "https://docs.aws.amazon.com/wellarchitected/latest/security-pillar/protecting-data-at-rest.html"
+    },
+    {
+      "rule_id": "SEC-002",
+      "pillar": "Security",
+      "severity": "HIGH",
+      "keyword": "iam",
+      "synonyms": ["identity", "access management", "role", "policy", "least privilege", "permission"],
+      "description": "No IAM-based access control detected.",
+      "remediation": "Define IAM roles and policies with least-privilege permissions. Use IAM Analyzer to validate access boundaries.",
+      "doc_url": "https://docs.aws.amazon.com/wellarchitected/latest/security-pillar/identity-management.html"
+    },
+    {
+      "rule_id": "SEC-003",
+      "pillar": "Security",
+      "severity": "MEDIUM",
+      "keyword": "vpc",
+      "synonyms": ["virtual private cloud", "subnet", "private subnet", "network isolation", "security group"],
+      "description": "Resources are not isolated within a VPC.",
+      "remediation": "Deploy all compute and data resources inside a VPC with private subnets. Use security groups and NACLs to control traffic.",
+      "doc_url": "https://docs.aws.amazon.com/wellarchitected/latest/security-pillar/protecting-networks.html"
+    },
+    {
+      "rule_id": "SEC-004",
+      "pillar": "Security",
+      "severity": "MEDIUM",
+      "keyword": "waf",
+      "synonyms": ["web application firewall", "owasp", "firewall", "shield"],
+      "description": "No Web Application Firewall (WAF) detected.",
+      "remediation": "Attach AWS WAF to CloudFront or ALB with managed rule groups (AWSManagedRulesCommonRuleSet) to block OWASP Top 10.",
+      "doc_url": "https://docs.aws.amazon.com/wellarchitected/latest/security-pillar/infrastructure-protection.html"
+    },
+    {
+      "rule_id": "SEC-005",
+      "pillar": "Security",
+      "severity": "MEDIUM",
+      "keyword": "kms",
+      "synonyms": ["key management", "customer managed key", "cmk", "envelope encryption"],
+      "description": "No KMS key management referenced for encryption.",
+      "remediation": "Use AWS KMS customer-managed keys (CMKs) for S3, RDS, EBS, and Secrets Manager. Enable automatic key rotation.",
+      "doc_url": "https://docs.aws.amazon.com/wellarchitected/latest/security-pillar/protecting-data-at-rest.html"
+    },
+    {
+      "rule_id": "REL-001",
+      "pillar": "Reliability",
+      "severity": "CRITICAL",
+      "keyword": "multi-az",
+      "synonyms": ["multi az", "multiple availability zone", "availability zone", "cross-az", "cross az"],
+      "description": "No Multi-AZ deployment detected — single point of failure.",
+      "remediation": "Enable Multi-AZ for RDS and ElastiCache. Distribute ECS/EC2 across at least two Availability Zones behind an ALB.",
+      "doc_url": "https://docs.aws.amazon.com/wellarchitected/latest/reliability-pillar/use-fault-isolation-to-protect-your-workload.html"
+    },
+    {
+      "rule_id": "REL-002",
+      "pillar": "Reliability",
+      "severity": "HIGH",
+      "keyword": "backup",
+      "synonyms": ["automated backup", "snapshot", "point-in-time recovery", "pitr", "data durability"],
+      "description": "No backup strategy mentioned for data durability.",
+      "remediation": "Enable automated backups on RDS and set a retention window of at least 7 days. Use AWS Backup for centralised policy management.",
+      "doc_url": "https://docs.aws.amazon.com/wellarchitected/latest/reliability-pillar/back-up-data.html"
+    },
+    {
+      "rule_id": "REL-003",
+      "pillar": "Reliability",
+      "severity": "HIGH",
+      "keyword": "failover",
+      "synonyms": ["fail over", "fallback", "disaster recovery", "dr", "rto", "rpo", "redundan"],
+      "description": "No failover mechanism detected.",
+      "remediation": "Configure RDS Multi-AZ for automatic failover. Use Route 53 health checks with failover routing for cross-region DR.",
+      "doc_url": "https://docs.aws.amazon.com/wellarchitected/latest/reliability-pillar/use-fault-isolation-to-protect-your-workload.html"
+    },
+    {
+      "rule_id": "REL-004",
+      "pillar": "Reliability",
+      "severity": "MEDIUM",
+      "keyword": "health check",
+      "synonyms": ["healthcheck", "health-check", "liveness", "readiness probe", "target group"],
+      "description": "No health checks configured for service endpoints.",
+      "remediation": "Configure ALB target group health checks with appropriate thresholds. Add ECS container health checks to detect and replace unhealthy tasks.",
+      "doc_url": "https://docs.aws.amazon.com/wellarchitected/latest/reliability-pillar/monitor-workload-resources.html"
+    },
+    {
+      "rule_id": "REL-005",
+      "pillar": "Reliability",
+      "severity": "MEDIUM",
+      "keyword": "autoscaling",
+      "synonyms": ["auto scaling", "auto-scaling", "scale out", "scale in", "horizontal scaling", "asg"],
+      "description": "No Auto Scaling policy detected for capacity management.",
+      "remediation": "Define Auto Scaling policies for ECS services or EC2 ASGs. Use target-tracking policies based on CPU or request-count metrics.",
+      "doc_url": "https://docs.aws.amazon.com/wellarchitected/latest/reliability-pillar/adapt-to-changes-in-demand.html"
+    },
+    {
+      "rule_id": "PER-001",
+      "pillar": "Performance Efficiency",
+      "severity": "MEDIUM",
+      "keyword": "cache",
+      "synonyms": ["caching", "elasticache", "redis", "memcached", "dax", "in-memory"],
+      "description": "No caching layer detected to reduce latency.",
+      "remediation": "Introduce ElastiCache (Redis) for session/query caching, or DAX for DynamoDB. Apply cache-aside pattern for hot data.",
+      "doc_url": "https://docs.aws.amazon.com/wellarchitected/latest/performance-efficiency-pillar/caching.html"
+    },
+    {
+      "rule_id": "PER-002",
+      "pillar": "Performance Efficiency",
+      "severity": "MEDIUM",
+      "keyword": "cdn",
+      "synonyms": ["content delivery", "edge", "edge location", "global accelerator"],
+      "description": "No CDN referenced for static asset delivery.",
+      "remediation": "Front static assets with CloudFront. Configure cache behaviours and TTLs to maximise cache-hit ratio at edge locations.",
+      "doc_url": "https://docs.aws.amazon.com/wellarchitected/latest/performance-efficiency-pillar/use-caching-and-content-delivery-networks.html"
+    },
+    {
+      "rule_id": "PER-003",
+      "pillar": "Performance Efficiency",
+      "severity": "MEDIUM",
+      "keyword": "cloudfront",
+      "synonyms": ["cloud front", "cf distribution", "origin shield"],
+      "description": "CloudFront not used for edge content delivery.",
+      "remediation": "Create a CloudFront distribution with your ALB or S3 bucket as origin. Enable compression and HTTP/2 for improved performance.",
+      "doc_url": "https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/Introduction.html"
+    },
+    {
+      "rule_id": "PER-004",
+      "pillar": "Performance Efficiency",
+      "severity": "HIGH",
+      "keyword": "load balancer",
+      "synonyms": ["alb", "nlb", "application load balancer", "network load balancer", "elb", "load-balancer"],
+      "description": "No load balancer detected for traffic distribution.",
+      "remediation": "Place an Application Load Balancer (ALB) in front of your compute tier. Use listener rules and weighted target groups for blue/green deployments.",
+      "doc_url": "https://docs.aws.amazon.com/wellarchitected/latest/performance-efficiency-pillar/performance-efficiency.html"
+    },
+    {
+      "rule_id": "CST-001",
+      "pillar": "Cost Optimization",
+      "severity": "MEDIUM",
+      "keyword": "reserved",
+      "synonyms": ["reserved instance", "savings plan", "compute savings", "ri "],
+      "description": "No Reserved Instances or Savings Plans mentioned.",
+      "remediation": "Commit to 1- or 3-year Reserved Instances or Compute Savings Plans for baseline workloads to reduce on-demand costs by up to 72%.",
+      "doc_url": "https://docs.aws.amazon.com/wellarchitected/latest/cost-optimization-pillar/pricing-model.html"
+    },
+    {
+      "rule_id": "CST-002",
+      "pillar": "Cost Optimization",
+      "severity": "LOW",
+      "keyword": "spot",
+      "synonyms": ["spot instance", "spot fleet", "ec2 spot", "preemptible"],
+      "description": "Spot Instances not considered for fault-tolerant workloads.",
+      "remediation": "Use EC2 Spot or Fargate Spot for batch processing, CI/CD, and stateless workers to cut compute costs by up to 90%.",
+      "doc_url": "https://docs.aws.amazon.com/wellarchitected/latest/cost-optimization-pillar/pricing-model.html"
+    },
+    {
+      "rule_id": "CST-003",
+      "pillar": "Cost Optimization",
+      "severity": "MEDIUM",
+      "keyword": "savings plan",
+      "synonyms": ["compute savings plan", "ec2 savings", "sagemaker savings", "cost commitment"],
+      "description": "No Savings Plan referenced for compute cost reduction.",
+      "remediation": "Analyse your Compute Savings Plan coverage in Cost Explorer. A 1-year no-upfront plan typically saves 20–40% over on-demand.",
+      "doc_url": "https://docs.aws.amazon.com/savingsplans/latest/userguide/what-is-savings-plans.html"
+    },
+    {
+      "rule_id": "CST-004",
+      "pillar": "Cost Optimization",
+      "severity": "LOW",
+      "keyword": "lifecycle",
+      "synonyms": ["lifecycle policy", "s3 lifecycle", "storage tier", "glacier", "intelligent-tiering", "intelligent tiering"],
+      "description": "No S3 lifecycle policy detected for storage cost management.",
+      "remediation": "Define S3 lifecycle rules to transition objects to S3-IA after 30 days and Glacier after 90 days. Enable S3 Intelligent-Tiering for unpredictable access patterns.",
+      "doc_url": "https://docs.aws.amazon.com/wellarchitected/latest/cost-optimization-pillar/manage-demand-and-supply-resources.html"
+    },
+    {
+      "rule_id": "OPS-001",
+      "pillar": "Operational Excellence",
+      "severity": "HIGH",
+      "keyword": "monitoring",
+      "synonyms": ["monitor", "observability", "metrics", "telemetry", "apm", "datadog", "new relic"],
+      "description": "No monitoring strategy detected.",
+      "remediation": "Implement CloudWatch metrics, dashboards, and Container Insights for ECS. Define SLIs and SLOs to track service health.",
+      "doc_url": "https://docs.aws.amazon.com/wellarchitected/latest/operational-excellence-pillar/monitor-workload-resources.html"
+    },
+    {
+      "rule_id": "OPS-002",
+      "pillar": "Operational Excellence",
+      "severity": "HIGH",
+      "keyword": "cloudwatch",
+      "synonyms": ["cloud watch", "cw metric", "cw logs", "log group", "metric filter"],
+      "description": "CloudWatch not referenced for observability.",
+      "remediation": "Enable CloudWatch Container Insights, create custom metrics for business KPIs, and build operational dashboards per service.",
+      "doc_url": "https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/WhatIsCloudWatch.html"
+    },
+    {
+      "rule_id": "OPS-003",
+      "pillar": "Operational Excellence",
+      "severity": "MEDIUM",
+      "keyword": "logging",
+      "synonyms": ["log", "logs", "audit trail", "access log", "cloudtrail", "cloud trail", "log aggregation"],
+      "description": "No logging mechanism mentioned for audit trails.",
+      "remediation": "Enable VPC Flow Logs, ALB access logs, and CloudTrail for API auditing. Ship logs to a centralised S3 bucket with lifecycle policies.",
+      "doc_url": "https://docs.aws.amazon.com/wellarchitected/latest/operational-excellence-pillar/logging.html"
+    },
+    {
+      "rule_id": "OPS-004",
+      "pillar": "Operational Excellence",
+      "severity": "MEDIUM",
+      "keyword": "ci/cd",
+      "synonyms": ["cicd", "ci cd", "pipeline", "codepipeline", "codedeploy", "github actions", "deployment automation", "continuous integration", "continuous delivery"],
+      "description": "No CI/CD pipeline detected for deployment automation.",
+      "remediation": "Implement a CI/CD pipeline with CodePipeline + CodeBuild, or GitHub Actions. Automate integration tests and blue/green deployments.",
+      "doc_url": "https://docs.aws.amazon.com/wellarchitected/latest/operational-excellence-pillar/deploy-changes.html"
+    },
+    {
+      "rule_id": "OPS-005",
+      "pillar": "Operational Excellence",
+      "severity": "MEDIUM",
+      "keyword": "alarm",
+      "synonyms": ["alarms", "alert", "alerting", "pagerduty", "sns notification", "threshold", "composite alarm"],
+      "description": "No CloudWatch alarms configured for proactive alerting.",
+      "remediation": "Create CloudWatch alarms for p99 latency, error rate, and CPU utilisation. Use composite alarms and route to SNS for on-call alerting.",
+      "doc_url": "https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/AlarmThatSendsEmail.html"
+    },
+    {
+      "rule_id": "SUS-001",
+      "pillar": "Sustainability",
+      "severity": "LOW",
+      "keyword": "graviton",
+      "synonyms": ["arm64", "graviton2", "graviton3", "graviton4", "aws graviton"],
+      "description": "Graviton processors not considered for energy efficiency.",
+      "remediation": "Migrate ECS tasks and RDS instances to Graviton (arm64). Graviton3 delivers up to 60% better energy efficiency vs. comparable x86.",
+      "doc_url": "https://docs.aws.amazon.com/wellarchitected/latest/sustainability-pillar/sustainability-pillar.html"
+    },
+    {
+      "rule_id": "SUS-002",
+      "pillar": "Sustainability",
+      "severity": "MEDIUM",
+      "keyword": "rightsizing",
+      "synonyms": ["right-sizing", "right sizing", "compute optimizer", "overprovisioned", "instance sizing"],
+      "description": "No rightsizing strategy mentioned to reduce waste.",
+      "remediation": "Enable AWS Compute Optimizer and act on its recommendations. Review underutilised resources monthly using Cost Explorer rightsizing recommendations.",
+      "doc_url": "https://docs.aws.amazon.com/wellarchitected/latest/sustainability-pillar/sustainability-pillar.html"
+    },
+    {
+      "rule_id": "SUS-003",
+      "pillar": "Sustainability",
+      "severity": "MEDIUM",
+      "keyword": "serverless",
+      "synonyms": ["lambda", "fargate", "server-less", "event-driven", "on-demand compute", "function as a service", "faas"],
+      "description": "Serverless architecture not considered for sustainability.",
+      "remediation": "Evaluate Lambda or Fargate for event-driven workloads. Serverless eliminates idle capacity and reduces energy consumption proportional to actual usage.",
+      "doc_url": "https://docs.aws.amazon.com/wellarchitected/latest/sustainability-pillar/software-and-architecture.html"
+    },
+    {
+      "rule_id": "SUS-004",
+      "pillar": "Sustainability",
+      "severity": "LOW",
+      "keyword": "efficiency",
+      "synonyms": ["resource efficiency", "energy efficient", "carbon", "sustainable", "green cloud", "utilisation"],
+      "description": "No resource efficiency strategy referenced.",
+      "remediation": "Enable AWS Customer Carbon Footprint Tool to track emissions. Target high utilisation via bin-packing and consolidation of underused resources.",
+      "doc_url": "https://docs.aws.amazon.com/wellarchitected/latest/sustainability-pillar/sustainability-pillar.html"
+    }
+  ]
+}
