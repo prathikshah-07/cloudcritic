@@ -1,0 +1,9 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "cloudcritic-waf",
+  "version": "1.0.0",
+  "description": "Score AWS architectures against the Well-Architected Framework",
+  "author": { "name": "prathikshah-07" },
+  "keywords": ["well-architected", "architecture review", "aws pillars", "cloudcritic"],
+  "skills": [{ "name": "review", "path": "skills/review/SKILL.md" }]
+}
