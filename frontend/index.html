@@ -15,6 +15,7 @@
 :root {
   --bg:       #0a0a0a;
   --surface:  #111111;
+  --surface2: #161616;
   --border:   #1f1f1f;
   --text:     #f5f5f5;
   --muted:    #7a7a7a;
@@ -172,7 +173,7 @@ button:active { transform: scale(.97); }
 button:disabled { opacity: .4; cursor: not-allowed; transform: none; }
 #scoreBtn {
   background: var(--accent);
-  color: #000;
+  color: #fff;
 }
 #scoreBtn:not(:disabled):hover { box-shadow: 0 4px 20px rgba(124,92,255,.4); }
 #scoreBtn.pulsing { animation: btnPulse 1s var(--ease) infinite; }
@@ -298,7 +299,7 @@ button:disabled { opacity: .4; cursor: not-allowed; transform: none; }
   padding: 1.4rem 1.5rem;
   transition: background .2s var(--ease);
 }
-.pillar-card:hover { background: #161616; }
+.pillar-card:hover { background: var(--surface2); }
 .pillar-name {
   font-family: var(--font-sans);
   font-size: .72rem;
@@ -382,7 +383,7 @@ button:disabled { opacity: .4; cursor: not-allowed; transform: none; }
   transition: background .15s var(--ease);
 }
 .finding-row:last-child { border-bottom: none; }
-.finding-row:hover { background: #161616; }
+.finding-row:hover { background: var(--surface2); }
 @keyframes fadeIn { to { opacity: 1; } }
 .finding-badge {
   font-family: var(--font-mono);
@@ -459,12 +460,199 @@ button:disabled { opacity: .4; cursor: not-allowed; transform: none; }
   line-height: 1.8;
   color: #c0c0c0;
   white-space: pre-wrap;
+  min-height: 1.6rem;
 }
 #explainRow {
   display: flex;
   justify-content: flex-end;
   margin-bottom: 1.25rem;
 }
+
+/* ── Chat panel ────────────────────────────────────────────────── */
+#chatPanel {
+  display: none;
+  margin-bottom: 8rem;
+  opacity: 0;
+  transform: translateY(16px);
+  transition: opacity .5s var(--ease), transform .5s var(--ease);
+}
+#chatPanel.visible { display: block; }
+#chatPanel.animated { opacity: 1; transform: translateY(0); }
+
+.chat-header {
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+  margin-bottom: 1.5rem;
+}
+.chat-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+  animation: chatPulse 2s ease infinite;
+}
+@keyframes chatPulse {
+  0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(124,92,255,.5); }
+  50%       { opacity: .7; box-shadow: 0 0 0 5px rgba(124,92,255,0); }
+}
+
+/* ── Suggestion chips ──────────────────────────────────────────── */
+#chipRow {
+  display: flex;
+  gap: .5rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.25rem;
+}
+.chip {
+  font-family: var(--font-mono);
+  font-size: .7rem;
+  letter-spacing: .04em;
+  color: var(--accent);
+  border: 1px solid rgba(124,92,255,.35);
+  background: rgba(124,92,255,.07);
+  border-radius: 20px;
+  padding: .3rem .85rem;
+  cursor: pointer;
+  transition: background .15s var(--ease), border-color .15s var(--ease), color .15s var(--ease);
+  white-space: nowrap;
+}
+.chip:hover {
+  background: rgba(124,92,255,.15);
+  border-color: rgba(124,92,255,.6);
+  color: var(--text);
+}
+.chip:disabled {
+  opacity: .4;
+  cursor: not-allowed;
+}
+
+/* ── Message list ──────────────────────────────────────────────── */
+#chatMessages {
+  display: flex;
+  flex-direction: column;
+  gap: .75rem;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+  margin-bottom: 1rem;
+  max-height: 480px;
+  overflow-y: auto;
+  scroll-behavior: smooth;
+}
+#chatMessages::-webkit-scrollbar { width: 4px; }
+#chatMessages::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+.chat-empty {
+  padding: 2rem 1.5rem;
+  font-family: var(--font-mono);
+  font-size: .75rem;
+  color: var(--muted);
+  letter-spacing: .06em;
+  text-align: center;
+}
+
+.msg {
+  display: flex;
+  gap: .75rem;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--border);
+  animation: fadeIn .2s var(--ease) forwards;
+}
+.msg:last-child { border-bottom: none; }
+
+.msg-avatar {
+  font-family: var(--font-mono);
+  font-size: .6rem;
+  font-weight: 500;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  padding: .2rem .45rem;
+  border-radius: 4px;
+  flex-shrink: 0;
+  margin-top: .1rem;
+  height: fit-content;
+}
+.msg.user { background: var(--surface); }
+.msg.user .msg-avatar {
+  color: var(--accent);
+  border: 1px solid rgba(124,92,255,.35);
+  background: rgba(124,92,255,.08);
+}
+.msg.assistant { background: var(--surface2); }
+.msg.assistant .msg-avatar {
+  color: var(--green);
+  border: 1px solid rgba(63,185,80,.3);
+  background: rgba(63,185,80,.07);
+}
+
+.msg-content {
+  font-size: .9rem;
+  line-height: 1.65;
+  color: var(--text);
+  white-space: pre-wrap;
+  word-break: break-word;
+  flex: 1;
+}
+.msg.user .msg-content { color: #d0d0d0; }
+
+/* ── Typing indicator ──────────────────────────────────────────── */
+.typing-indicator {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: .5rem 0;
+}
+.typing-indicator span {
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  background: var(--muted);
+  animation: typingBounce .9s ease infinite;
+}
+.typing-indicator span:nth-child(2) { animation-delay: .15s; }
+.typing-indicator span:nth-child(3) { animation-delay: .3s; }
+@keyframes typingBounce {
+  0%, 60%, 100% { transform: translateY(0); opacity: .4; }
+  30%            { transform: translateY(-5px); opacity: 1; }
+}
+
+/* ── Chat input row ────────────────────────────────────────────── */
+#chatInputRow {
+  display: flex;
+  gap: .6rem;
+  align-items: flex-end;
+}
+#chatInput {
+  flex: 1;
+  min-height: 44px;
+  max-height: 120px;
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: .7rem 1rem;
+  font-family: var(--font-sans);
+  font-size: .88rem;
+  line-height: 1.5;
+  resize: none;
+  outline: none;
+  overflow-y: auto;
+  transition: border-color .2s var(--ease), box-shadow .2s var(--ease);
+}
+#chatInput::placeholder { color: var(--muted); }
+#chatInput:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(124,92,255,.12);
+}
+#chatSendBtn {
+  background: var(--accent);
+  color: #fff;
+  border-radius: 10px;
+  padding: .65rem 1.1rem;
+  flex-shrink: 0;
+  font-size: .85rem;
+  height: 44px;
+}
+#chatSendBtn:not(:disabled):hover { box-shadow: 0 4px 16px rgba(124,92,255,.35); }
 
 /* ── Responsive ────────────────────────────────────────────────── */
 @media (max-width: 860px) {
@@ -490,7 +678,7 @@ button:disabled { opacity: .4; cursor: not-allowed; transform: none; }
 <!-- ── Nav ──────────────────────────────────────────────────────── -->
 <nav>
   <span class="nav-logo">CLOUDCRITIC</span>
-  <span class="nav-version">V0.1.0</span>
+  <span class="nav-version">V0.2.0</span>
 </nav>
 
 <!-- ── Main ─────────────────────────────────────────────────────── -->
@@ -572,33 +760,77 @@ button:disabled { opacity: .4; cursor: not-allowed; transform: none; }
     <!-- Explain block -->
     <div id="explainWrap">
       <p class="section-label">Plain-English Explanation</p>
-      <div id="explainBlock"></div>
+      <div id="explainBlock" aria-live="polite"></div>
     </div>
 
+  </div>
+
+  <!-- ── Chat panel ──────────────────────────────────────────────── -->
+  <div id="chatPanel" aria-label="Remediation chat">
+    <hr class="section-rule" style="margin-top:0;" />
+
+    <div class="chat-header">
+      <div class="chat-dot" aria-hidden="true"></div>
+      <p class="section-label" style="margin-bottom:0;">Ask the architect</p>
+    </div>
+
+    <!-- Suggestion chips -->
+    <div id="chipRow" role="group" aria-label="Suggested questions"></div>
+
+    <!-- Message list -->
+    <div id="chatMessages" role="log" aria-live="polite" aria-label="Chat messages">
+      <div class="chat-empty" id="chatEmpty">Ask a question about your findings above ↑</div>
+    </div>
+
+    <!-- Input row -->
+    <div id="chatInputRow">
+      <textarea
+        id="chatInput"
+        placeholder="Ask about a specific finding, remediation step, or architecture decision…"
+        rows="1"
+        spellcheck="false"
+        aria-label="Chat message"
+      ></textarea>
+      <button id="chatSendBtn" type="button" aria-label="Send message">Send →</button>
+    </div>
   </div>
 
 </main>
 
 <script>
 /* ════════════════════════════════════════════════════════════════
+   State
+═══════════════════════════════════════════════════════════════ */
+let _architecture = '';          // last scored architecture text
+let _findings     = [];          // last scored findings list
+let _chatHistory  = [];          // [{role, content}, …]
+let _streaming    = false;       // true while any stream is active
+
+/* ════════════════════════════════════════════════════════════════
    Refs
 ═══════════════════════════════════════════════════════════════ */
-const archEl       = document.getElementById('arch');
-const scoreBtn     = document.getElementById('scoreBtn');
+const archEl        = document.getElementById('arch');
+const scoreBtn      = document.getElementById('scoreBtn');
 const exampleSelect = document.getElementById('exampleSelect');
-const explainBtn   = document.getElementById('explainBtn');
-const explainBtn2  = document.getElementById('explainBtn2');
-const errorEl      = document.getElementById('error');
-const results      = document.getElementById('results');
-const aggNumber    = document.getElementById('aggNumber');
-const aggGrade     = document.getElementById('aggGrade');
-const aggCaption   = document.getElementById('aggCaption');
-const aggDesc      = document.getElementById('aggDesc');
-const pillarsGrid  = document.getElementById('pillarsGrid');
-const sevRow       = document.getElementById('sevRow');
-const findingsList = document.getElementById('findingsList');
-const explainWrap  = document.getElementById('explainWrap');
-const explainBlock = document.getElementById('explainBlock');
+const explainBtn    = document.getElementById('explainBtn');
+const explainBtn2   = document.getElementById('explainBtn2');
+const errorEl       = document.getElementById('error');
+const results       = document.getElementById('results');
+const aggNumber     = document.getElementById('aggNumber');
+const aggGrade      = document.getElementById('aggGrade');
+const aggCaption    = document.getElementById('aggCaption');
+const aggDesc       = document.getElementById('aggDesc');
+const pillarsGrid   = document.getElementById('pillarsGrid');
+const sevRow        = document.getElementById('sevRow');
+const findingsList  = document.getElementById('findingsList');
+const explainWrap   = document.getElementById('explainWrap');
+const explainBlock  = document.getElementById('explainBlock');
+const chatPanel     = document.getElementById('chatPanel');
+const chatMessages  = document.getElementById('chatMessages');
+const chatEmpty     = document.getElementById('chatEmpty');
+const chatInput     = document.getElementById('chatInput');
+const chatSendBtn   = document.getElementById('chatSendBtn');
+const chipRow       = document.getElementById('chipRow');
 
 /* ════════════════════════════════════════════════════════════════
    Helpers
@@ -634,7 +866,7 @@ function countUp(el, target, duration, color) {
   const start = performance.now();
   function step(now) {
     const t = Math.min((now - start) / duration, 1);
-    const eased = 1 - Math.pow(1 - t, 3); // ease-out-cubic
+    const eased = 1 - Math.pow(1 - t, 3);
     el.textContent = Math.round(eased * target);
     if (t < 1) requestAnimationFrame(step);
     else el.textContent = target;
@@ -649,7 +881,6 @@ function countUp(el, target, duration, color) {
 function renderAggregate(score) {
   const color = scoreColor(score);
   const { grade, desc } = letterGrade(score);
-
   countUp(aggNumber, score, 800, color);
   aggGrade.textContent = grade;
   aggGrade.style.color = color;
@@ -675,7 +906,6 @@ function renderPillars(pillars) {
       `<div class="pillar-passing">${d.passing} / ${d.total} RULES PASSED</div>`;
     pillarsGrid.appendChild(card);
   });
-  // Trigger bar animation next paint
   requestAnimationFrame(() => requestAnimationFrame(() => {
     pillarsGrid.querySelectorAll('.pillar-bar-fill').forEach(el => {
       el.style.width = el.dataset.pct + '%';
@@ -732,6 +962,75 @@ function showResults() {
 }
 
 /* ════════════════════════════════════════════════════════════════
+   Show chat panel
+═══════════════════════════════════════════════════════════════ */
+function showChatPanel() {
+  chatPanel.classList.add('visible');
+  requestAnimationFrame(() => requestAnimationFrame(() => chatPanel.classList.add('animated')));
+}
+
+/* ════════════════════════════════════════════════════════════════
+   Suggestion chips
+═══════════════════════════════════════════════════════════════ */
+function renderChips(findings) {
+  chipRow.innerHTML = '';
+  if (!findings.length) return;
+
+  // Top 3 findings become chips
+  const top = findings.slice(0, 3);
+  top.forEach(f => {
+    const btn = document.createElement('button');
+    btn.className = 'chip';
+    btn.type = 'button';
+    btn.textContent = `How do I fix ${f.rule_id}?`;
+    btn.addEventListener('click', () => {
+      if (_streaming) return;
+      sendChatMessage(`How do I fix ${f.rule_id}?`);
+    });
+    chipRow.appendChild(btn);
+  });
+
+  // Extra contextual chip
+  const overviewChip = document.createElement('button');
+  overviewChip.className = 'chip';
+  overviewChip.type = 'button';
+  overviewChip.textContent = 'Where should I start?';
+  overviewChip.addEventListener('click', () => {
+    if (_streaming) return;
+    sendChatMessage('Given all the findings, where should I start with remediation?');
+  });
+  chipRow.appendChild(overviewChip);
+}
+
+/* ════════════════════════════════════════════════════════════════
+   Stream utility — reads a plain-text stream and calls onChunk
+   for each token; calls onDone when complete.
+═══════════════════════════════════════════════════════════════ */
+async function readStream(response, onChunk, onDone) {
+  if (!response.body) {
+    throw new Error('Response has no body to stream.');
+  }
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder('utf-8');
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) {
+        // Flush trailing bytes still held inside the decoder.
+        const tail = decoder.decode();
+        if (tail) onChunk(tail);
+        break;
+      }
+      const text = decoder.decode(value, { stream: true });
+      if (text) onChunk(text);
+    }
+  } finally {
+    try { reader.releaseLock(); } catch (_) {}
+    onDone();
+  }
+}
+
+/* ════════════════════════════════════════════════════════════════
    Example texts
 ═══════════════════════════════════════════════════════════════ */
 const EXAMPLES = {
@@ -770,7 +1069,7 @@ exampleSelect.addEventListener('change', () => {
     archEl.value = text;
     archEl.focus();
   }
-  exampleSelect.value = ''; // reset to placeholder
+  exampleSelect.value = '';
 });
 
 /* ════════════════════════════════════════════════════════════════
@@ -787,6 +1086,12 @@ scoreBtn.addEventListener('click', async () => {
   explainBtn.disabled = true;
   explainWrap.style.display = 'none';
 
+  // Reset chat state for new score
+  _chatHistory = [];
+  chatMessages.innerHTML = '';
+  chatMessages.appendChild(chatEmpty);
+  chipRow.innerHTML = '';
+
   try {
     const res = await fetch('/api/score', {
       method: 'POST',
@@ -796,13 +1101,19 @@ scoreBtn.addEventListener('click', async () => {
     if (!res.ok) { const e = await res.json(); throw new Error(e.detail || res.statusText); }
     const data = await res.json();
 
+    // Persist state for chat
+    _architecture = text;
+    _findings = data.findings ?? [];
+
     const agg = data.aggregate_score ?? data.aggregate ?? 0;
     renderAggregate(agg);
     renderPillars(normalizePillars(data));
-    renderSevRow(data.findings ?? []);
-    renderFindings(data.findings ?? []);
+    renderSevRow(_findings);
+    renderFindings(_findings);
+    renderChips(_findings);
 
     showResults();
+    showChatPanel();
     explainBtn.disabled = false;
   } catch (err) {
     setError(err.message);
@@ -814,43 +1125,57 @@ scoreBtn.addEventListener('click', async () => {
 });
 
 /* ════════════════════════════════════════════════════════════════
-   Explain (both buttons call the same handler)
+   Explain — streaming (both buttons)
 ═══════════════════════════════════════════════════════════════ */
 async function doExplain() {
   const text = archEl.value.trim();
-  if (!text) return;
+  if (!text || _streaming) return;
   clearError();
 
+  _streaming = true;
   explainBtn.disabled = true;
   explainBtn2.textContent = 'Explaining…';
   explainBtn2.disabled = true;
+  setChatInputEnabled(false);
 
-  try {
+  // Show the block immediately so tokens stream into view
+  explainBlock.textContent = '';
+  explainWrap.style.display = 'block';
+  explainWrap.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+    try {
     const res = await fetch('/api/explain', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ architecture: text }),
     });
     if (!res.ok) { const e = await res.json(); throw new Error(e.detail || res.statusText); }
-    const data = await res.json();
-    explainBlock.textContent = data.explanation ?? data.advice ?? JSON.stringify(data, null, 2);
-    explainWrap.style.display = 'block';
-    explainWrap.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+    await readStream(
+      res,
+      chunk => {
+        explainBlock.textContent += chunk;
+        // Force a reflow so the browser paints the new text immediately
+        // instead of waiting for a batch.
+        void explainBlock.offsetHeight;
+      },
+      () => {}
+    );
   } catch (err) {
     setError(err.message);
+    explainWrap.style.display = 'none';
   } finally {
+    _streaming = false;
     explainBtn.disabled = false;
     explainBtn2.textContent = 'Explain in plain English →';
     explainBtn2.disabled = false;
+    setChatInputEnabled(true);
   }
 }
 
 explainBtn.addEventListener('click', doExplain);
 explainBtn2.addEventListener('click', doExplain);
 
-/* ════════════════════════════════════════════════════════════════
-   Explain button 2 hover styles (inline-defined element)
-═══════════════════════════════════════════════════════════════ */
 explainBtn2.addEventListener('mouseenter', () => {
   explainBtn2.style.color = 'var(--text)';
   explainBtn2.style.borderColor = 'var(--accent)';
@@ -859,6 +1184,149 @@ explainBtn2.addEventListener('mouseleave', () => {
   explainBtn2.style.color = 'var(--muted)';
   explainBtn2.style.borderColor = 'var(--border)';
 });
+
+/* ════════════════════════════════════════════════════════════════
+   Chat helpers
+═══════════════════════════════════════════════════════════════ */
+function setChatInputEnabled(enabled) {
+  chatInput.disabled = !enabled;
+  chatSendBtn.disabled = !enabled;
+  // Dim chips while streaming
+  chipRow.querySelectorAll('.chip').forEach(c => { c.disabled = !enabled; });
+}
+
+function appendMessage(role, content) {
+  // Remove empty-state placeholder
+  if (chatEmpty.parentNode === chatMessages) chatMessages.removeChild(chatEmpty);
+
+  const wrap = document.createElement('div');
+  wrap.className = `msg ${role}`;
+
+  const avatar = document.createElement('div');
+  avatar.className = 'msg-avatar';
+  avatar.textContent = role === 'user' ? 'YOU' : 'AI';
+
+  const body = document.createElement('div');
+  body.className = 'msg-content';
+  body.textContent = content;
+
+  wrap.appendChild(avatar);
+  wrap.appendChild(body);
+  chatMessages.appendChild(wrap);
+  chatMessages.scrollTop = chatMessages.scrollHeight;
+  return body; // return content node so we can stream into it
+}
+
+function appendTypingIndicator() {
+  if (chatEmpty.parentNode === chatMessages) chatMessages.removeChild(chatEmpty);
+
+  const wrap = document.createElement('div');
+  wrap.className = 'msg assistant';
+  wrap.id = 'typingWrap';
+
+  const avatar = document.createElement('div');
+  avatar.className = 'msg-avatar';
+  avatar.textContent = 'AI';
+
+  const indicator = document.createElement('div');
+  indicator.className = 'msg-content';
+  indicator.innerHTML = '<div class="typing-indicator"><span></span><span></span><span></span></div>';
+
+  wrap.appendChild(avatar);
+  wrap.appendChild(indicator);
+  chatMessages.appendChild(wrap);
+  chatMessages.scrollTop = chatMessages.scrollHeight;
+  return wrap;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   Send chat message
+═══════════════════════════════════════════════════════════════ */
+async function sendChatMessage(text) {
+  if (!text.trim() || _streaming) return;
+  clearError();
+
+  const userMessage = text.trim();
+  chatInput.value = '';
+  autoResizeChatInput();
+
+  // Append user bubble
+  appendMessage('user', userMessage);
+
+  // Show typing indicator while waiting for first chunk
+  const typingWrap = appendTypingIndicator();
+
+  _streaming = true;
+  setChatInputEnabled(false);
+
+  let assistantContent = '';
+
+  try {
+    const res = await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        architecture: _architecture,
+        findings: _findings,
+        history: _chatHistory,
+        message: userMessage,
+      }),
+    });
+    if (!res.ok) { const e = await res.json(); throw new Error(e.detail || res.statusText); }
+
+    // Replace typing indicator with real assistant bubble on first chunk
+    let assistantBodyEl = null;
+
+    await readStream(
+      res,
+      chunk => {
+        if (!assistantBodyEl) {
+          // First chunk — swap typing indicator for a real bubble
+          typingWrap.remove();
+          assistantBodyEl = appendMessage('assistant', '');
+        }
+        assistantContent += chunk;
+        assistantBodyEl.textContent = assistantContent;
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+      },
+      () => {}
+    );
+
+    // If stream ended with no content (edge case), remove typing indicator
+    if (!assistantBodyEl) typingWrap.remove();
+
+    // Persist to history
+    _chatHistory.push({ role: 'user',      content: userMessage });
+    _chatHistory.push({ role: 'assistant', content: assistantContent });
+
+  } catch (err) {
+    typingWrap.remove();
+    appendMessage('assistant', `Error: ${err.message}`);
+  } finally {
+    _streaming = false;
+    setChatInputEnabled(true);
+    chatInput.focus();
+  }
+}
+
+/* ════════════════════════════════════════════════════════════════
+   Chat input — send on Enter (Shift+Enter for newline)
+═══════════════════════════════════════════════════════════════ */
+chatInput.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    sendChatMessage(chatInput.value);
+  }
+});
+
+chatSendBtn.addEventListener('click', () => sendChatMessage(chatInput.value));
+
+/* ── Auto-resize chat textarea ─────────────────────────────────── */
+function autoResizeChatInput() {
+  chatInput.style.height = 'auto';
+  chatInput.style.height = Math.min(chatInput.scrollHeight, 120) + 'px';
+}
+chatInput.addEventListener('input', autoResizeChatInput);
 </script>
 </body>
 </html>

@@ -7,7 +7,8 @@ GET  /health            Health check
 GET  /api/pillars       List the 6 Well-Architected pillars and descriptions
 POST /api/score         Score one architecture description (includes grade A-F)
 POST /api/score/batch   Score multiple architecture descriptions
-POST /api/explain       Plain-language LLM explanation of findings
+POST /api/explain       Stream plain-language LLM explanation of findings
+POST /api/chat          Stream conversational remediation chat
 """
 
 from __future__ import annotations
@@ -16,15 +17,16 @@ import pathlib
 from typing import Any
 
 from dotenv import load_dotenv
-load_dotenv()  # loads .env into os.environ before any other module reads it
+load_dotenv(override=True)  # loads .env into os.environ before any other module reads it
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
 from pydantic import BaseModel, Field
 from backend.models import Finding, Pillar, Severity
-from backend.reviewer import explain_findings
+from backend.reviewer import stream_explain, stream_chat
 from backend.scoring import score_architecture
+
 # ---------------------------------------------------------------------------
 # App
 # ---------------------------------------------------------------------------
@@ -100,6 +102,14 @@ def _score_with_grade(text: str) -> dict[str, Any]:
     result["grade"] = _grade(result["aggregate"])
     return result
 
+# Shared streaming headers — kills buffering at every hop.
+_STREAM_HEADERS = {
+    "X-Accel-Buffering": "no",
+    "Cache-Control": "no-cache",
+    "Content-Encoding": "identity",
+    "Connection": "keep-alive",
+}
+
 # ---------------------------------------------------------------------------
 # Request schemas
 # ---------------------------------------------------------------------------
@@ -109,6 +119,16 @@ class ArchitectureRequest(BaseModel):
 
 class BatchRequest(BaseModel):
     architectures: list[str] = Field(..., min_length=1)
+
+class ChatMessage(BaseModel):
+    role: str = Field(..., pattern="^(user|assistant)$")
+    content: str = Field(..., min_length=1)
+
+class ChatRequest(BaseModel):
+    architecture: str = Field(..., min_length=1)
+    findings: list[dict[str, Any]] = Field(default_factory=list)
+    history: list[ChatMessage] = Field(default_factory=list)
+    message: str = Field(..., min_length=1)
 
 # ---------------------------------------------------------------------------
 # Routes
@@ -157,16 +177,43 @@ def api_score_batch(body: BatchRequest) -> JSONResponse:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 @app.post("/api/explain")
-def api_explain(body: ArchitectureRequest) -> JSONResponse:
-    """Return plain-language LLM advice for an architecture description.
+def api_explain(body: ArchitectureRequest) -> StreamingResponse:
+    """Stream plain-language LLM advice for an architecture description.
 
-    Scores the architecture first, then passes typed Finding objects to the
-    reviewer. Falls back gracefully when OPENAI_API_KEY is absent.
+    Scores the architecture first, then streams findings through the
+    reviewer.  Falls back gracefully when GROQ_API_KEY is absent.
+    Clients should read the response as a plain text stream.
     """
     try:
         result   = score_architecture(body.architecture)
-        findings = _findings_to_models(result.get("findings", []))
-        advice   = explain_findings(findings)
-        return JSONResponse({"advice": advice})
+        findings = result.get("findings", [])
+        return StreamingResponse(
+            stream_explain(findings),
+            media_type="text/plain; charset=utf-8",
+            headers=_STREAM_HEADERS,
+        )
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+@app.post("/api/chat")
+def api_chat(body: ChatRequest) -> StreamingResponse:
+    """Stream a conversational remediation chat response.
+
+    Accepts the architecture text, current findings, conversation history,
+    and the latest user message.  Returns a plain-text stream of the
+    assistant reply.  Falls back gracefully when GROQ_API_KEY is absent.
+    """
+    try:
+        history_dicts = [{"role": m.role, "content": m.content} for m in body.history]
+        return StreamingResponse(
+            stream_chat(
+                architecture=body.architecture,
+                findings=body.findings,
+                history=history_dicts,
+                message=body.message,
+            ),
+            media_type="text/plain; charset=utf-8",
+            headers=_STREAM_HEADERS,
+        )
     except Exception as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
